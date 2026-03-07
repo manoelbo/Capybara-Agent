@@ -194,34 +194,36 @@ Motivo: Minimalista, sem boilerplate, perfeito para Electron (sem SSR). Stores s
 
 | Opção | Prós | Contras |
 |-------|------|---------|
-| **Vercel AI SDK + @openrouter/ai-sdk-provider** | API unificada, streaming nativo, tool calling, provider OpenRouter oficial, MCP support | Relativamente novo, pode ter edge cases no Electron |
-| @openrouter/sdk direto | SDK oficial OpenRouter, streaming, mais controle | API mais baixa, sem abstrações de agent/tools |
+| **OpenAI SDK apontando para OpenRouter** | API OpenAI-compatible madura, tool calling confiável, streaming via SSE padrão, controle total do agent loop | Agent loop manual (~150-200 linhas) |
+| Vercel AI SDK + @openrouter/ai-sdk-provider | API unificada, streaming nativo | Bugs críticos em tool calling no provider OpenRouter (v2.2.3), otimizado para Next.js/não para agent loops em Node.js puro |
+| Mastra | Suporte explícito a Electron, multi-model, MCP built-in | Dependência grande, menos controle |
 | LangChain.js | 1000+ integrações, agent patterns maduros | Pesado, Python-first, overengineered |
 
-**→ Recomendação: `Vercel AI SDK (ai)` + `@openrouter/ai-sdk-provider`**
-Motivo: API unificada `generateText`/`streamText`/`generateObject`, tool calling nativo com approval workflow (perfeito para Planning Mode), streaming first-class, funciona em Node.js puro (main process do Electron). O provider OpenRouter oficial (v2.2.3) dá acesso a 300+ modelos.
+**→ Recomendação: `OpenAI SDK` apontando para OpenRouter**
+Motivo: O OpenRouter expõe uma API OpenAI-compatible madura. Usar o `openai` SDK diretamente (com `baseURL` apontando para OpenRouter) garante tool calling confiável, streaming via SSE padrão, e controle total do agent loop (~150-200 linhas de código). O Vercel AI SDK + provider OpenRouter tem bugs ativos em tool calling (lifecycle events de tools silenciosamente dropados durante streaming) que são deal-breakers para agent loops robustos.
 
 #### 6.4 IPC Type-Safe (Main ↔ Renderer)
 
 | Opção | Prós | Contras |
 |-------|------|---------|
-| **electron-trpc** | Leverages tRPC (ecosystem maduro), queries/mutations/subscriptions | Dependência do tRPC |
-| EIPC | Schema-first, code-gen automático, validação runtime | Mais novo, comunidade menor |
-| @electron-toolkit/typed-ipc | Leve, próximo do Electron nativo | Pouca abstração, menos features |
+| **IPC tipado com Zod** | ~50 linhas de código, zero deps extras, type-safe, streaming via `ipcRenderer.on()` | Pode ficar desorganizado sem disciplina; migração para framework se o projeto crescer |
+| electron-trpc (fork mat-sz/trpc-electron) | Leverages tRPC v11, queries/mutations/subscriptions | Fork com adoção modesta (42 stars); electron-trpc original NÃO suporta tRPC v11 |
+| Hono RPC | Alternativa moderna para Electron | Emergente, menos documentação |
 
-**→ Recomendação: `electron-trpc`**
-Motivo: tRPC é amplamente adotado, type-safety end-to-end, subscriptions para streaming de respostas do agente, patterns bem documentados.
+**→ Recomendação: `IPC tipado com Zod` (MVP)**
+Motivo: Para um MVP de 1 semana com projeto solo, tRPC é over-engineering. IPC tipado com Zod dá type-safety com ~50 linhas de código. Para streaming, `ipcRenderer.on()` com typed events é mais direto que subscriptions do tRPC. Todos os schemas ficam centralizados em `shared/ipc-schema.ts`. Se o projeto crescer, migração para tRPC ou Hono RPC é natural.
 
 #### 6.5 Banco de Dados Local
 
 | Opção | Prós | Contras |
 |-------|------|---------|
-| **better-sqlite3 + Drizzle ORM** | Performance (11.7x mais rápido que sqlite3), sync API, Drizzle adiciona type-safety | Native module (rebuild para Electron) |
+| **better-sqlite3 + Kysely** | Performance (11.7x mais rápido que sqlite3), sync API, Kysely dá type-safety mais forte sem overhead de ORM | Native module (rebuild para Electron) |
+| better-sqlite3 + Drizzle ORM | Performance + ORM maduro com migrations | Overhead de migrations/drizzle-kit desnecessário para MVP com ~5 tabelas |
 | sql.js | Pure WASM, sem native module | Mais lento, carrega DB inteiro na memória |
 | Arquivos JSON/MD puros | Simples, sem dependência | Sem queries complexas, sem indexação |
 
-**→ Recomendação: `better-sqlite3` + `Drizzle ORM`**
-Motivo: Para indexar backlinks, buscar entidades, rastrear status de processamento e gerenciar sessões de chat — SQLite é ideal. Drizzle ORM adiciona type-safety sem overhead. Os dados editoriais (dossiê, fontes) continuam em Markdown no filesystem; o SQLite serve como índice de busca e metadata operacional.
+**→ Recomendação: `better-sqlite3` + `Kysely`**
+Motivo: Para indexar backlinks, buscar entidades, rastrear status de processamento — SQLite é ideal. Kysely oferece type-safety mais forte que Drizzle para projetos pequenos, com query builder expressivo e sem overhead de migrations/schema declarations. Para um MVP com ~5 tabelas, Kysely dá o equilíbrio ideal entre type-safety e simplicidade. Os dados editoriais (dossiê, fontes) continuam em Markdown no filesystem; o SQLite serve como índice de busca e metadata operacional.
 
 #### 6.6 Busca Full-Text
 
@@ -263,13 +265,13 @@ Motivo: O graph view do Capybara é inspirado no Obsidian — force-directed, in
 
 | Opção | Prós | Contras |
 |-------|------|---------|
-| **Tiptap** | Extensão de mentions built-in, headless, extensível, ProseMirror base | Learning curve moderada |
+| **react-mentions-ts** | TypeScript-first, múltiplos triggers (@, !) nativos, ~10-20KB, zero learning curve | Menos extensível para rich text futuro |
+| Tiptap | Extensão de mentions built-in, headless, ProseMirror base | 50-70KB, overkill para input de chat simples |
 | Lexical | Meta-backed, imutável | Mentions requerem mais implementação custom |
-| Slate.js | API simples | Mutável, menos extensões prontas |
 | textarea simples + custom | Zero deps | Muito trabalho para @, !, / triggers |
 
-**→ Recomendação: `Tiptap` com `@tiptap/extension-mention`**
-Motivo: Três tipos de trigger (@source, !investigation, /command) com autocomplete popup — Tiptap tem extensão de mentions pronta e é headless (estilizável com shadcn/Tailwind). A integração com cmdk para slash commands é natural.
+**→ Recomendação: `react-mentions-ts` para menções + `cmdk` para slash commands**
+Motivo: O chat input precisa de 3 coisas: @mentions, !mentions, e /commands. Isso é um textarea com popup de autocomplete, não um editor rich text. react-mentions-ts é TypeScript-first, suporta múltiplos triggers nativamente, e pesa ~10-20KB vs 50-70KB do Tiptap. Para `/` commands, cmdk (já no plano via shadcn) continua como solução separada. Se no futuro o input precisar de rich text (bold, links), migrar para Tiptap.
 
 #### 6.10 Command Palette / Slash Commands
 
@@ -308,7 +310,7 @@ Motivo: Vitest integra nativamente com Vite (mesmo toolchain do electron-vite). 
 
 #### 6.16 Persistência de Chat
 
-**→ Recomendação: `SQLite` (via better-sqlite3/Drizzle)**
+**→ Recomendação: `SQLite` (via better-sqlite3/Kysely)**
 Motivo: Sessões de chat com milhares de mensagens, token counts, timestamps — relacional é mais adequado que JSON/MD. Queries tipo "todas as sessões deste workspace" são triviais com SQL.
 
 ---
@@ -324,9 +326,9 @@ Motivo: Sessões de chat com milhares de mensagens, token counts, timestamps —
 │  │                                                           │ │
 │  │  ┌─────────────┐  ┌──────────────┐  ┌────────────────┐  │ │
 │  │  │ AI Engine   │  │ File System  │  │ SQLite (DB)    │  │ │
-│  │  │ (Vercel AI  │  │ Manager      │  │ (better-sqlite3│  │ │
-│  │  │  SDK +      │  │ (chokidar +  │  │  + Drizzle)    │  │ │
-│  │  │  OpenRouter) │  │  workspace   │  │                │  │ │
+│  │  │ (OpenAI SDK │  │ Manager      │  │ (better-sqlite3│  │ │
+│  │  │  → OpenRou- │  │ (chokidar +  │  │  + Kysely)     │  │ │
+│  │  │  ter)       │  │  workspace   │  │                │  │ │
 │  │  │             │  │  operations)  │  │ - search index │  │ │
 │  │  │ - streaming │  │              │  │ - chat sessions│  │ │
 │  │  │ - tools     │  │ - read/write │  │ - backlinks    │  │ │
@@ -334,7 +336,7 @@ Motivo: Sessões de chat com milhares de mensagens, token counts, timestamps —
 │  │  └──────┬──────┘  └──────┬───────┘  │   status       │  │ │
 │  │         │                │          └───────┬────────┘  │ │
 │  │         └────────┬───────┘                  │           │ │
-│  │                  │ electron-trpc (IPC)       │           │ │
+│  │                  │ IPC tipado (Zod)          │           │ │
 │  │                  ▼                          │           │ │
 │  └──────────────────┬──────────────────────────┘           │ │
 │                     │                                       │ │
@@ -343,8 +345,8 @@ Motivo: Sessões de chat com milhares de mensagens, token counts, timestamps —
 │  │                                                          │ │
 │  │  ┌────────────┐  ┌──────────────┐  ┌─────────────────┐ │ │
 │  │  │  Sidebar   │  │  Viewer      │  │  Chat Panel     │ │ │
-│  │  │  (file     │  │  (Capybara   │  │  (Tiptap input, │ │ │
-│  │  │   tree,    │  │   Markdown   │  │   streaming,    │ │ │
+│  │  │  (file     │  │  (Capybara   │  │  (react-mentions│ │ │
+│  │  │   tree,    │  │   Markdown   │  │   input,        │ │ │
 │  │  │   drag &   │  │   renderer,  │  │   action pills, │ │ │
 │  │  │   drop,    │  │   Graph View │  │   cmdk menu,    │ │ │
 │  │  │   status)  │  │   widget)    │  │   modes Q/P/A)  │ │ │
@@ -373,8 +375,8 @@ Motivo: Sessões de chat com milhares de mensagens, token counts, timestamps —
 - ✅ Fontes IBM Plex bundled
 - ✅ Frameless window com drag regions (macOS traffic lights)
 - ✅ Layout master (Sidebar + Viewer + Chat)
-- ✅ electron-trpc setup (IPC type-safe)
-- ✅ better-sqlite3 + Drizzle (schema base: sources, entities, backlinks)
+- ✅ IPC tipado com Zod (shared/ipc-schema.ts)
+- ✅ better-sqlite3 + Kysely (schema base: sources, entities, backlinks)
 - ✅ File system manager (workspace CRUD + chokidar watcher)
 - ✅ Zustand stores (workspace, viewer, chat)
 - ✅ Sidebar com file tree dinâmico
@@ -389,11 +391,11 @@ Motivo: Sessões de chat com milhares de mensagens, token counts, timestamps —
 **Objetivo:** Processamento de documentos via LLM + chat com streaming funcionando end-to-end.
 
 - ✅ Drag-and-drop de arquivos para Sources (sidebar + viewer)
-- ✅ Vercel AI SDK + @openrouter/ai-sdk-provider configurado
-- ✅ Pipeline PDF: pdf-parse → chunk pages → LLM → replica.md
+- ✅ OpenAI SDK apontando para OpenRouter configurado
+- ✅ Pipeline PDF: pdfjs-dist → render pages como imagens → vision model → replica.md
 - ✅ Geração de preview.md e metadata.md via LLM
 - ✅ Status de processamento com badges (○ ⟳ ✓) na sidebar
-- ✅ Chat panel com streaming (Tiptap input)
+- ✅ Chat panel com streaming (react-mentions-ts input)
 - ✅ Menções @source no chat (autocomplete básico)
 - ✅ Mode toggle Q/P/A (Question mode funcional, Agent mode básico)
 - ✅ Source Detail View no viewer (preview + metadata + link para original)
@@ -406,7 +408,7 @@ Motivo: Sessões de chat com milhares de mensagens, token counts, timestamps —
 **Objetivo:** Agent loop completo que popula dossiê e cria investigações.
 
 - ✅ Agent tools (read, write, list, search, createEntity, addAnnotation, addClue, createInvestigation, createTimelineEvent)
-- ✅ Agent loop: plan → tool call → observe → iterate (Vercel AI SDK maxSteps)
+- ✅ Agent loop: plan → tool call → observe → iterate (OpenAI SDK + while loop manual)
 - ✅ Agent Mode funcional (cria/modifica arquivos autonomamente)
 - ✅ Planning Mode (apresenta plano, espera aprovação)
 - ✅ Action pills no chat (mostra o que o agente modificou)
@@ -481,7 +483,7 @@ Motivo: Sessões de chat com milhares de mensagens, token counts, timestamps —
 |-------|---------|-----------|
 | **Custo de API OpenRouter** pode surpreender usuários em processamento massivo | Alto | Estimativa de custo antes de processar; alertas de gasto; modelo econômico como default |
 | **better-sqlite3 native module** pode causar problemas de rebuild com Electron | Médio | Usar `electron-rebuild`; testar em CI para 3 plataformas; fallback para sql.js se necessário |
-| **Qualidade da replica.md** depende do LLM — tabelas complexas podem falhar | Alto | Chunking inteligente (page-by-page); modelo dedicado para extraction; fallback manual |
+| **Qualidade da replica.md** depende do LLM — tabelas complexas podem falhar | Alto | Pipeline vision (páginas como imagens); modelo dedicado para processing; fallback manual |
 | **Tamanho do app Electron** pode ser grande (200MB+) | Médio | Não embutir Playwright; otimizar assets; usar fontes subset |
 | **Complexidade do Capybara Markdown** — muitas extensões custom podem criar bugs de rendering | Médio | Cada extensão como plugin isolado com testes unitários; fallback para markdown padrão |
 

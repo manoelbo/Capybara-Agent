@@ -1,0 +1,36 @@
+---
+description: Padrões React no renderer — componentes funcionais, Zustand por domínio, Chat-First, layout 3 zonas
+globs: "src/renderer/**/*.{tsx,ts}"
+alwaysApply: false
+---
+
+# Renderer (React)
+
+## Estrutura
+
+- **Entry:** `src/renderer/main.tsx` → `App.tsx`.
+- **Stores:** Zustand por domínio em `src/renderer/stores/` — ex.: `useWorkspaceStore`, `useSourcesStore`, `useDossierStore`, `useChatStore`.
+- **Hooks:** Custom hooks em `src/renderer/hooks/` (ex.: useIPC, useStream).
+- **Lib:** Utilitários em `src/renderer/lib/`.
+- **Componentes:** `components/ui/` (shadcn), `components/app/` (produto).
+
+## Padrões
+
+- Apenas **componentes funcionais**.
+- Lógica reutilizável em custom hooks; não duplicar em vários componentes.
+- Chamadas ao main via `window.api` (tipado); streaming via callbacks registrados no preload.
+
+## Chat-First Principle
+
+- Botões de ação **injetam comandos no chat** (Button-to-Command Map); ex.: "Process Selected" → `/process @file1 @file2`.
+- Viewer é **read-only**; única edição direta na UI: **toggle de verificação** (hover: Verify / Reject) em entidades/clues.
+
+## Layout
+
+- **3 zonas:** Sidebar (~260px) | Viewer (flex) | Chat (~380px).
+- Painéis scrolláveis com **ScrollArea** do shadcn.
+- Atalhos: `Cmd+K` (foco no chat), `Cmd+B` (toggle sidebar), `Cmd+G` (Graph fullscreen), `Cmd+[` / `Cmd+]` (back/forward).
+
+## Estilo
+
+- Tema e componentes de UI conforme rule `ui-design-system.mdc`; Markdown conforme `capybara-markdown.mdc`.

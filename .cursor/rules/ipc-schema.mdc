@@ -1,0 +1,46 @@
+---
+description: IPC tipado com Zod — schemas centralizados, nomeação de channels, tipagem main/renderer
+globs: "src/shared/**"
+alwaysApply: false
+---
+
+# IPC Schema (shared)
+
+## Onde fica
+
+- Schemas centralizados em `src/shared/ipc-schema.ts`.
+- Tipos exportados para main e renderer (inferência a partir dos schemas Zod).
+
+## Formato de channels
+
+- **Request/response:** `domain:action` — ex.: `workspace:create`, `source:process`, `ai:chat`, `settings:get`.
+- **Streaming (main → renderer):** `domain:stream:event` — ex.: `ai:stream:token`, `source:stream:progress`.
+
+## Estrutura do schema
+
+Cada channel tem `input` e `output` como schemas Zod:
+
+```typescript
+export const ipcSchema = {
+  'workspace:create': {
+    input: z.object({ name: z.string(), apiKey: z.string().optional() }),
+    output: z.object({ path: z.string() }),
+  },
+  'files:read': {
+    input: z.object({ path: z.string() }),
+    output: z.string(),
+  },
+  'ai:stream:token': {
+    // evento; input não se aplica no renderer
+    output: z.object({ token: z.string(), done: z.boolean().optional() }),
+  },
+} as const;
+
+export type IpcSchema = typeof ipcSchema;
+export type IpcChannel = keyof IpcSchema;
+```
+
+## Uso
+
+- **Main:** `InputSchema.parse(rawArgs)` no handler; retornar valor validado por `OutputSchema` se aplicável.
+- **Renderer:** Tipar `window.api` com tipos inferidos de `IpcSchema` (input/output por channel) para type-safety nas chamadas e callbacks de stream.

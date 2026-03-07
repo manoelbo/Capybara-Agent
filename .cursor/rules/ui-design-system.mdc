@@ -1,0 +1,33 @@
+---
+description: Design system — shadcn/ui, tema Capybara 0, IBM Plex, OKLCH, frameless drag regions
+globs: "src/renderer/components/**"
+alwaysApply: false
+---
+
+# UI & Design System
+
+## Base
+
+- **shadcn/ui** como Tier 1 (primitivos); componentes de produto como Tier 2 em `components/app/`.
+- **Tema Capybara 0** via tweakcn; tokens em OKLCH para light/dark.
+- **Fontes:** IBM Plex Sans Thai (body), IBM Plex Mono (code), IBM Plex Sans JP (fallback).
+- **Border radius:** 0rem (cantos retos).
+- **Cores:** Nunca hardcoded; usar variáveis CSS do tema (OKLCH).
+
+## Janela frameless
+
+- Áreas arrastáveis com `-webkit-app-region: drag`; botões e inputs com `-webkit-app-region: no-drag` para manter clicáveis.
+
+## Tema claro/escuro
+
+- Controlado por classe no `<html>` (ex.: `dark` para escuro).
+- Toggle: atalho `Cmd+Shift+T`; persistir preferência (electron-store ou config do workspace).
+
+## Organização
+
+- **components/ui/** — Componentes shadcn (button, dialog, dropdown-menu, input, tabs, sidebar, ScrollArea, etc.).
+- **components/app/** — Componentes específicos do produto (ex.: SourceCard, DossierTree, ChatPanel, GraphWidget).
+
+## Referência
+
+- Instalação do tema: `pnpm dlx shadcn@latest add https://tweakcn.com/r/themes/...` (ver `.agents/capybara_agent_project.md` ou PRD-05).

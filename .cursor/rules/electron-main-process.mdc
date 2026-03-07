@@ -1,0 +1,47 @@
+---
+description: Padrões do Main Process — janela frameless, IPC handlers com Zod, services
+globs: "src/main/**"
+alwaysApply: false
+---
+
+# Main Process (Electron)
+
+## Janela
+
+- **Frameless no macOS:** `titleBarStyle: 'hiddenInset'`, `trafficLightPosition: { x: 12, y: 12 }`.
+- **webPreferences:** `contextIsolation: true`, `nodeIntegration: false`, `sandbox: false` (necessário para better-sqlite3).
+- Preload: `join(__dirname, '../preload/index.js')`.
+
+## IPC handlers
+
+- Registrados em `src/main/ipc/` (ex.: `workspace.ts`, `files.ts`, `ai.ts`, `settings.ts`, `db.ts`).
+- Sempre validar argumentos com Zod usando o schema de `src/shared/ipc-schema.ts`.
+
+```typescript
+// ✅ BOM
+ipcMain.handle('channel:action', async (_event, rawArgs) => {
+  const args = SomeSchema.parse(rawArgs);
+  const result = await doSomething(args);
+  return OutputSchema.parse(result);
+});
+```
+
+```typescript
+// ❌ EVITAR — sem validação
+ipcMain.handle('channel:action', async (_event, args) => {
+  return doSomething(args);
+});
+```
+
+## Estrutura do main
+
+- **ipc/** — Handlers por domínio; schema compartilhado em `shared/`.
+- **ai/** — Engine OpenRouter, model routing, streaming.
+- **db/** — Kysely + better-sqlite3, schema, migrations.
+- **fs/** — Workspace manager, chokidar (watcher), paths.
+- **services/** — Lógica de negócio reutilizada por vários handlers.
+
+## Config por workspace
+
+- Config em `.capybara/config.json` dentro do workspace (`~/CapybaraWorkspaces/{nome}/`).
+- Usar electron-store para preferências de app; paths de workspace vêm do fs service.

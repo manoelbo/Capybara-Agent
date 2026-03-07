@@ -1,0 +1,41 @@
+---
+description: Dialeto Capybara Markdown — diretivas, wikilinks, source refs, frontmatter, componentes de render
+globs: "src/renderer/**/*markdown*,src/renderer/**/*md*,src/shared/**/*markdown*"
+alwaysApply: false
+---
+
+# Capybara Markdown
+
+## Renderer (React)
+
+- **react-markdown** + **remark-directive** + **remark-directive-rehype** para blocos custom.
+- Plugin custom **rehype-source-ref** para `→[source-name]`.
+- Componentes custom: **AnnotationCard**, **ClueCard**, **EventCard**, **WikiLink** (para `[[entity-name]]`).
+
+## Wikilinks e referências
+
+- **Wikilinks bidirecionais:** `[[entity-name]]` — gerar backlinks no DB; navegação no viewer.
+- **Source references:** `→[source-name]` — rastreabilidade para a fonte original; renderizar com link ou tooltip para preview.
+
+## Blocos diretivos
+
+- `:::annotation` — Anotações investigativas com rastreabilidade.
+- `:::clue` — Clues de linhas investigativas.
+- `:::event` — Eventos de timeline (YYYY/YYYY-MM.md).
+
+## Frontmatter
+
+- Tipos: **person**, **group**, **place**, **investigation**, **clue**, **event**.
+- **Status de verificação:** unverified | verified | rejected (exibido com toggle na UI).
+- Parser: **gray-matter**; processamento de árvore: **unified** (remark/rehype).
+
+## Artefatos por source
+
+- **preview.md** — Frontmatter + resumo.
+- **metadata.md** — entities_mentioned, dates_found, locations, tags.
+- **replica.md** — Markdown página a página (PDFs) com `<!-- Page N -->`.
+
+## Chat
+
+- **Menções:** `@` para sources/dossier, `!` para investigations (ex.: react-mentions-ts, cmdk).
+- Slash commands: `/create_line`, `/summarize`, `/web_search`, etc.

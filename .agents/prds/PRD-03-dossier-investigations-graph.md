@@ -270,18 +270,22 @@ Qualquer texto envolvido em `[[ ]]` cria um link bidirecional:
 ### 5.2 Resolução de links
 
 ```typescript
-function resolveWikilink(name: string, workspace: Workspace): string | null {
-  // 1. Buscar por nome exato no índice de entidades (SQLite)
-  const entity = db.query.entities.findFirst({
-    where: eq(entities.name, name)
-  })
-  if (entity) return entity.filePath
+async function resolveWikilink(name: string, db: Kysely<CapybaraDB>): Promise<string | null> {
+  // 1. Buscar por nome exato no índice de entidades (SQLite via Kysely)
+  const entity = await db
+    .selectFrom('entities')
+    .select('file_path')
+    .where('name', '=', name)
+    .executeTakeFirst()
+  if (entity) return entity.file_path
 
-  // 2. Buscar por aliases
-  const byAlias = db.query.entities.findFirst({
-    where: sql`json_each(${entities.tags}) = ${name}`
-  })
-  if (byAlias) return byAlias.filePath
+  // 2. Buscar por aliases (JSON array search)
+  const byAlias = await db
+    .selectFrom('entities')
+    .select('file_path')
+    .where('tags', 'like', `%${name}%`)
+    .executeTakeFirst()
+  if (byAlias) return byAlias.file_path
 
   // 3. Retornar null (link quebrado — renderizar em vermelho)
   return null

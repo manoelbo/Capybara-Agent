@@ -1,0 +1,53 @@
+---
+description: Visão geral do Capybara Agent — o que é, stack, arquitetura e estrutura de pastas
+alwaysApply: true
+---
+
+# Capybara Agent — Projeto
+
+## O que é
+
+App desktop **Electron** de investigação jornalística (OSINT) que usa LLMs de forma agêntica para ingerir documentos, transformá-los em Markdown estruturado e rastreável, organizar dossiês e graph view — com dados locais e rastreabilidade total às fontes.
+
+## Tech Stack
+
+- **Runtime:** Node.js (Electron)
+- **Build:** electron-vite, electron-builder
+- **Frontend:** React, TypeScript strict, Tailwind, shadcn/ui, Zustand
+- **Backend (main):** better-sqlite3, Kysely, chokidar, electron-store
+- **AI:** OpenRouter (OpenAI SDK), Zod (schemas IPC)
+- **Fontes:** IBM Plex Sans Thai, Mono, Sans JP
+- **Tema:** Capybara 0 (OKLCH), border-radius 0rem
+
+## Domínios (5)
+
+1. **Workspace / Infra / AI** — Electron, IPC, storage, OpenRouter, model routing
+2. **Sources** — Ingestão, PDF→MD, metadata, preview, replica
+3. **Dossier** — Entidades, annotations, clues, investigações, graph
+4. **Chat / Agent** — Chat UI, agent loop, tools, Capybara Markdown
+5. **UI** — Layout, sidebar, viewer, Chat-First Principle, atalhos
+
+## Estrutura de pastas (src/)
+
+```
+src/
+  main/       ipc/, ai/, db/, fs/, services/
+  preload/    contextBridge + IPC tipado
+  shared/     ipc-schema.ts (Zod)
+  renderer/   components/, stores/, hooks/, lib/, styles/
+```
+
+## Workspace no disco
+
+`~/CapybaraWorkspaces/{nome}/` contém:
+
+- `.capybara/` — config.json, data.db
+- `sources/` — documentos importados e artefatos (preview.md, metadata.md, replica.md)
+- `dossier/` — entidades e Markdown do dossiê
+- `investigations/` — linhas investigativas e clues
+
+Dados editoriais em **Markdown**; **SQLite** como índice.
+
+## Referência
+
+PRDs em `.agents/prds/PRD-00-master.md` (master) e `PRD-01` a `PRD-05` por domínio.

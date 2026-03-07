@@ -1,0 +1,57 @@
+---
+description: Workflow de desenvolvimento — ciclo plan→execute→test, skills, comandos e teste visual com CDP
+alwaysApply: true
+---
+
+# Capybara Agent — Workflow
+
+## Ciclo de desenvolvimento
+
+```
+plan-feature → execute-plan → commit → post-commit-tests → run-tests
+```
+
+- **plan-feature** gera plano em `.agents/plans/` (não escreve código).
+- **execute-plan** implementa tarefas do plano e valida (VALIDATE por tarefa, VALIDATION COMMANDS ao final).
+- **commit** faz commit atômico com tag (feat/fix/refactor/test/docs/chore/style).
+- **post-commit-tests** analisa o commit, gera/atualiza testes e registra em `.agents/test-registry.md`.
+- **run-tests** roda a suíte (all ou last) conforme o registro.
+
+## Skills e quando usar
+
+| Skill | Uso |
+|-------|-----|
+| **plan-feature** | Planejar uma feature completa (análise, inspiração, Context7, plano em disco). Nunca escreve código. |
+| **inspiration-research** | Pesquisar inspiração nos projetos em `.agents/inspirations/` (subagentes explore + decisor). |
+| **full-stack-electron** | Consultar padrões e API do Electron (main/renderer, IPC, BrowserWindow, packaging). |
+| **electron** (CDP) | Testar o app visualmente: lançar com `--remote-debugging-port`, conectar via agent-browser, snapshot/screenshot. |
+
+## Comandos
+
+- **/plan-feature [nome]** — Gera plano em `.agents/plans/{kebab-case}.md`.
+- **/execute-plan [plano]** — Executa tarefas; usa `.agents/plans/` se path não for absoluto.
+- **/inspire-from-projects [tópico]** — Busca inspiração (usa skill inspiration-research).
+- **/load-project-context** — Carrega estrutura, PRDs, estado do git.
+- **/commit** — Commit atômico com tag e mensagem.
+- **/post-commit-tests** — Gera/atualiza testes após commit; atualiza `.agents/test-registry.md`.
+- **/run-tests [all\|last]** — Roda suíte completa ou só testes do último commit no registro.
+
+## Teste visual com Electron (CDP)
+
+Após implementar UI ou fluxos visuais, usar a skill **electron** (`.cursor/skills/electron/SKILL.md`):
+
+1. **Build** — `pnpm build` ou deixar `pnpm dev` rodando.
+2. **Lançar com CDP** — App deve ser iniciado com `--remote-debugging-port=9222` (ex.: `./dist/mac/App.app/Contents/MacOS/App --remote-debugging-port=9222` ou via script).
+3. **Conectar** — `agent-browser connect 9222` (ou `npx agent-browser connect 9222`).
+4. **Snapshot** — `agent-browser snapshot -i` para listar elementos interativos.
+5. **Screenshot** — `agent-browser screenshot estado-atual.png` para validar visualmente.
+6. **Dark mode** — Usar `--color-scheme dark` ou `AGENT_BROWSER_COLOR_SCHEME=dark` para preservar tema escuro.
+
+O agente pode assim validar se o que foi implementado está correto na tela (layout, botões, texto).
+
+## Documentação do projeto
+
+- **.agents/** — PRDs (`prds/`), planos (`plans/`), test-registry (`test-registry.md`), inspirações (`inspirations/`).
+- **.cursor/rules/** — Regras de contexto do projeto.
+- **.cursor/commands/** — Definições dos comandos.
+- **.cursor/skills/** — Skills (plan-feature, inspiration-research, electron, full-stack-electron).

@@ -1,0 +1,49 @@
+---
+description: Manifesto das inspirações do Capybara Agent e quando usar a skill inspiration-research
+globs:
+alwaysApply: false
+---
+
+# Inspiration — Projetos de Referência do Capybara Agent
+
+## Quando considerar
+
+- Ao fazer **brainstorm** da próxima feature ou decisão de arquitetura.
+- Quando o usuário pedir **inspiração** nos projetos de referência (ex.: "vamos nos inspirar nos projetos em Inspirations para [tópico]").
+
+Nesses momentos, **considere a skill inspiration-research** em `.cursor/skills/inspiration-research/SKILL.md`: ela consulta este manifesto, dispara subagentes de pesquisa em cada projeto e um subagente decisor devolve a melhor recomendação.
+
+---
+
+## Manifesto — Projetos em `.agents/inspirations/`
+
+Os projetos abaixo estão clonados em `.agents/inspirations/<NomeDoProjeto>/`. Use esta tabela para saber o papel de cada um e quando consultá-lo.
+
+| Pasta | Papel | Use for | PRDs relacionados |
+|-------|--------|---------|-------------------|
+| **open-cowork** | desktop-app-chat-ui | App desktop (Electron), layout sidebar/viewer/chat, chat sempre presente, skills/MCP, trace de ferramentas | PRD-01, PRD-05, PRD-04 (layout, Chat-First) |
+| **Trilium** | org-menu-markdown | Árvore de notas, menu estilo Obsidian/Notion, hierarquia, visualização de Markdown, atributos/relações | PRD-05 (sidebar, file tree), PRD-03 (dossier tree), PRD-04 (renderer MD) |
+| **aider** | edit-docs-parts | Editar/atualizar documentos em partes específicas (diff/udiff, search-replace), agente que modifica arquivos com precisão | PRD-04 (tools `editFile`, atualização de metadata/preview) |
+| **learn-claude-code** | agent-strategies | Estrutura e estratégias de agente (loop plan→execute→observe, subagentes, tarefas em disco, permissões) | PRD-04 (agent loop, tools, Planning Mode) |
+| **opencode** | agent-tools-search | Como o agente opera, ferramentas (read, write, edit, grep, glob), modos (Build/Plan), configuração de permissões | PRD-04 (tools, modos Q/P/A, arquitetura do agente) |
+
+---
+
+## Critérios de decisão (para o subagente decisor)
+
+Ao recomendar qual(is) projeto(s) seguir para um tópico dado:
+
+1. **Arquitetura de agente e ferramentas** → Preferir **learn-claude-code** e **opencode** (padrão “estilo Claude Code”).
+2. **Edição precisa de trechos de documento** → Adaptar com **aider** (mesma família de problema: diff/udiff, search-replace).
+3. **Estrutura de app desktop, chat e UI** → **open-cowork**.
+4. **Organização de árvore, menu e Markdown** → **Trilium**.
+5. **Ideias criativas ou fora da curva** → Considerar **opencode** e **learn-claude-code** (padrões avançados de agente).
+
+O decisor deve devolver apenas qual(is) projeto(s) seguir e por quê, em 1–2 parágrafos, sem repetir todos os resumos de pesquisa.
+
+---
+
+## Nota
+
+- Projetos estão em `.agents/inspirations/<NomeDoProjeto>/` (ex.: `aider`, `Trilium`, `open-cowork`, `learn-claude-code`, `opencode`).
+- Se uma pasta estiver faltando, ignore-a na pesquisa e siga com as demais.

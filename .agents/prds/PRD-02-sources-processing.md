@@ -157,17 +157,21 @@ João Silva, representante legal da Construtora XYZ, doravante...
 
 | Tipo | Processamento | Artefatos gerados |
 |------|---------------|-------------------|
-| **PDF** | Chunk page-by-page → LLM transcreve cada página → monta replica.md | preview.md, metadata.md, replica.md |
+| **PDF** | Renderiza cada página como imagem (pdfjs-dist) → envia imagens ao LLM via vision → monta replica.md | preview.md, metadata.md, replica.md |
 | **Imagem** (jpg, png) | Envia para LLM com vision → gera descrição e metadata | preview.md, metadata.md |
 | **E-mail** (.eml) | Parseia headers + body → gera preview com contexto | preview.md, metadata.md |
 | **HTML** | Extrai texto limpo → gera preview e metadata | preview.md, metadata.md |
 | **Texto** (.txt, .md, .doc) | Leitura direta → gera preview e metadata | preview.md, metadata.md |
 
+**Estratégia de conversão de PDFs:** A conversão é feita 100% via LLM. Cada página do PDF é renderizada como imagem e enviada a um modelo de visão via OpenRouter. Não há extração de texto intermediária — o LLM "lê" a representação visual da página, preservando tabelas, layouts complexos, carimbos e assinaturas. O resultado é concatenado no `replica.md`, que serve como a versão Markdown fiel do documento original. Todas as interações subsequentes do agente e do usuário usam a replica como fonte de dados, não o PDF original.
+
 ---
 
 ## 4. Pipeline de Processamento
 
-### 4.1 Fluxo para PDFs
+### 4.1 Fluxo para PDFs (Vision-First Pipeline)
+
+A conversão de PDFs é feita inteiramente via modelos de visão (LLM). Não há extração de texto intermediária — cada página é renderizada como imagem e enviada ao modelo de processing via OpenRouter.
 
 ```
                           ┌─────────────────┐
@@ -176,16 +180,19 @@ João Silva, representante legal da Construtora XYZ, doravante...
                           └────────┬─────────┘
                                    │
                           ┌────────▼─────────┐
-                          │  Extrair páginas  │
-                          │  (pdf.js ou       │
-                          │   pdf-parse)      │
+                          │  pdfjs-dist:      │
+                          │  → Obter nº de   │
+                          │    páginas        │
+                          │  → Estimar custo  │
                           └────────┬─────────┘
                                    │
                     ┌──────────────▼──────────────┐
-                    │  Para cada página (chunk):   │
-                    │  → Enviar texto/imagem ao    │
-                    │    modelo de PROCESSING      │
-                    │  → Receber markdown fiel     │
+                    │  Para cada página:           │
+                    │  → Renderizar como imagem    │
+                    │    PNG (pdfjs-dist + Canvas) │
+                    │  → Enviar IMAGEM ao modelo   │
+                    │    de PROCESSING (vision)    │
+                    │  → LLM retorna Markdown fiel │
                     │  → Concatenar em replica.md  │
                     └──────────────┬──────────────┘
                                    │
@@ -208,21 +215,21 @@ João Silva, representante legal da Construtora XYZ, doravante...
 
 | Etapa | Ferramenta | Por quê |
 |-------|-----------|---------|
-| Extrair texto bruto de PDF | `pdf-parse` (baseado em pdf.js) | Leve, Node.js nativo, extrai texto e metadata básica |
-| Transcrição page-by-page | Vercel AI SDK → modelo de processing | LLM preserva formatação, tabelas, layout |
-| Imagens dentro de PDFs | Vercel AI SDK com vision | Modelo multimodal analisa imagens embutidas |
-| Geração de metadata | Vercel AI SDK → modelo de writing | Structured output (JSON mode) para entities_mentioned |
-| Status tracking | SQLite (tabela `sources`) | Query rápida de status de batch |
+| Obter nº de páginas e renderizar como imagens | `pdfjs-dist` (Canvas rendering) | Renderiza cada página como PNG para envio ao modelo de visão; obtém page count para estimativa de custo |
+| Transcrição page-by-page (vision) | OpenAI SDK → OpenRouter → modelo de processing (vision) | LLM recebe a imagem da página e preserva formatação, tabelas, layout, carimbos |
+| Geração de metadata | OpenAI SDK → OpenRouter → modelo de writing | Structured output (JSON mode) para entities_mentioned |
+| Status tracking | SQLite via Kysely (tabela `sources`) | Query rápida de status de batch |
 
 ### 4.3 Estimativa de Custo
 
-Antes de processar, calcular custo estimado:
+Antes de processar, calcular custo estimado. No pipeline vision, o custo de input é baseado em image tokens (não text tokens):
 
 ```typescript
 function estimateProcessingCost(source: Source): CostEstimate {
-  const tokensPerPage = 800 // média estimada
-  const totalInputTokens = source.pages * tokensPerPage
-  const totalOutputTokens = totalInputTokens * 1.2 // replica é ~20% maior
+  const imageTokensPerPage = 1200 // média estimada para imagem de página PDF
+  const outputTokensPerPage = 800 // markdown gerado por página
+  const totalInputTokens = source.pages * imageTokensPerPage
+  const totalOutputTokens = source.pages * outputTokensPerPage
 
   const processingCost = calculateModelCost(
     modelRouting.processing,
@@ -289,18 +296,18 @@ Status: ✓ Processed  |  Type: PDF  |  Pages: 147
 
 ---
 
-## 6. Processamento de Imagens (OCR/Vision)
+## 6. Processamento de Imagens (Vision)
 
-Para imagens (fotos, scans), o pipeline é diferente:
+Para imagens (fotos, scans), o pipeline usa a mesma estratégia vision-first dos PDFs:
 
-1. Enviar imagem diretamente ao modelo de processing (multimodal/vision)
+1. Enviar imagem diretamente ao modelo de processing via OpenRouter (multimodal/vision)
 2. Modelo retorna: descrição textual + entidades identificadas + contexto visual
 3. Gerar preview.md com descrição
 4. Gerar metadata.md com entidades encontradas na imagem
 
 Modelos recomendados para vision via OpenRouter:
-- `google/gemini-2.5-flash-lite` (econômico, bom para scans)
-- `anthropic/claude-sonnet-4` (melhor qualidade para fotos complexas)
+- `google/gemini-2.5-flash-lite` (econômico, bom para scans e PDFs)
+- `anthropic/claude-sonnet-4` (melhor qualidade para fotos complexas e layouts difíceis)
 
 ---
 
@@ -325,9 +332,9 @@ Modelos recomendados para vision via OpenRouter:
 - Chat-First processing buttons — ver PRD-05 §5.2
 
 ### ← Consome de Workspace & Infra
-- `trpc.files.*` para ler/escrever artefatos
-- `trpc.ai.streamText()` para chamar LLMs
-- `trpc.db.sources.*` para tracking de status
+- `ipc:files.*` para ler/escrever artefatos
+- `ipc:ai.stream` para chamar LLMs (streaming via eventos IPC)
+- `ipc:db.sources.*` para tracking de status
 - File watcher para detectar novos arquivos
 
 ---
@@ -337,10 +344,10 @@ Modelos recomendados para vision via OpenRouter:
 ```json
 {
   "dependencies": {
-    "pdf-parse": "^1.1",
+    "pdfjs-dist": "^4",
     "gpt-tokenizer": "^3.4"
   }
 }
 ```
 
-`pdf-parse` é a única dependência específica deste domínio. O resto (AI SDK, SQLite, file system) vem do domínio de Infra.
+`pdfjs-dist` é usado apenas para renderizar páginas de PDF como imagens (Canvas rendering) e obter metadata básica (nº de páginas). Toda a inteligência de conversão PDF→Markdown é feita pelo LLM via OpenRouter. O resto (AI SDK, SQLite, file system) vem do domínio de Infra.

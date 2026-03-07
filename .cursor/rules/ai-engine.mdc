@@ -1,0 +1,36 @@
+---
+description: Motor de AI — OpenRouter, 3 model slots, streaming via IPC, agent loop e tools
+globs: "src/main/ai/**"
+alwaysApply: false
+---
+
+# AI Engine (main)
+
+## Gateway
+
+- **OpenRouter** via OpenAI SDK: `baseURL: 'https://openrouter.ai/api/v1'`.
+- API key e seleção de modelos em `.capybara/config.json` (por workspace).
+
+## Model slots (3)
+
+- **processing** — Vision e extração (PDFs, imagens); modelos com suporte a imagem.
+- **writing** — Geração de Markdown (preview, replica, resumos).
+- **reasoning** — Planejamento do agente, raciocínio, tool calls.
+
+## Streaming
+
+- Tokens enviados ao renderer via IPC (ex.: `ai:stream:token`).
+- Handler no main envia chunks; preload expõe callback; renderer atualiza UI em tempo real.
+- Considerar token counter no chat com aviso em ~90% do limite.
+
+## Vision-first (PDFs)
+
+- Fluxo: página PDF → renderização como imagem → LLM com vision → Markdown.
+- Usar estimativa de custo (ex.: gpt-tokenizer) antes do processamento e exibir confirmação quando relevante.
+
+## Agent loop
+
+- Modos: Question (Q), Planning (P), Agent (A).
+- Loop: plan → tool call → observe → iterate.
+- **Tools** no formato OpenAI function calling: readFile, listDirectory, searchWorkspace, writeFile, editFile, deleteFile, createEntity, addAnnotation, createTimelineEvent, createInvestigation, addClue, processSource, crossReferenceCheck, updateVerificationStatus, scrapeUrl, etc.
+- Implementação das tools no main; expor via IPC para o módulo de chat/agent.

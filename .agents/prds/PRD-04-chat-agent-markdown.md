@@ -122,9 +122,9 @@ interface ContextTag {
 }
 ```
 
-### 3.3 Input com Tiptap + Menções
+### 3.3 Input com react-mentions-ts + cmdk
 
-**Tecnologia:** `Tiptap` com `@tiptap/extension-mention`
+**Tecnologia:** `react-mentions-ts` para @mentions e !mentions + `cmdk` para /commands
 
 Três triggers de autocomplete:
 
@@ -135,22 +135,35 @@ Três triggers de autocomplete:
 | `/` | Slash Commands | Lista estática + cmdk |
 
 ```typescript
-const mentionExtension = Mention.configure({
-  suggestion: {
-    char: '@',
-    items: ({ query }) => {
-      return miniSearch.search(query, {
-        filter: (result) => ['source', 'entity'].includes(result.type)
-      })
-    },
-    render: () => ({
-      // Popup com shadcn/ui Popover
-    })
-  }
-})
+import { MentionsInput, Mention } from 'react-mentions-ts'
+
+function ChatInput() {
+  return (
+    <MentionsInput value={value} onChange={handleChange}>
+      <Mention
+        trigger="@"
+        data={(search) =>
+          miniSearch.search(search, {
+            filter: (result) => ['source', 'entity'].includes(result.type)
+          }).map(r => ({ id: r.id, display: r.title }))
+        }
+        markup="@[__display__](__id__)"
+      />
+      <Mention
+        trigger="!"
+        data={(search) =>
+          miniSearch.search(search, {
+            filter: (result) => result.type === 'investigation'
+          }).map(r => ({ id: r.id, display: r.title }))
+        }
+        markup="![__display__](__id__)"
+      />
+    </MentionsInput>
+  )
+}
 ```
 
-Para `/` commands, usar **cmdk** (shadcn Command component):
+Para `/` commands, usar **cmdk** (shadcn Command component) — ativado quando o input começa com `/`:
 
 ```typescript
 const slashCommands = [
@@ -165,26 +178,30 @@ const slashCommands = [
 ### 3.4 Streaming de Respostas
 
 ```typescript
-// Main process (tRPC router)
-ai: t.router({
-  chat: t.procedure
-    .input(z.object({
-      messages: z.array(messageSchema),
-      mode: z.enum(['question', 'planning', 'agent']),
-      model: z.string(),
-    }))
-    .subscription(async function* ({ input }) {
-      const result = streamText({
-        model: getModel('reasoning'),
-        messages: input.messages,
-        tools: input.mode === 'agent' ? agentTools : undefined,
-        maxSteps: input.mode === 'agent' ? 20 : 1,
-      })
+// Main process (IPC handler)
+ipcMain.handle('ai:chat', async (event, input) => {
+  const { messages, mode, model } = ipcSchema['ai:chat'].input.parse(input)
+  const client = createOpenRouterClient(apiKey)
 
-      for await (const chunk of result.textStream) {
-        yield chunk
-      }
-    })
+  const stream = await client.chat.completions.create({
+    model: getModelId('reasoning'),
+    messages,
+    tools: mode === 'agent' ? agentTools : undefined,
+    stream: true,
+  })
+
+  for await (const chunk of stream) {
+    const content = chunk.choices[0]?.delta?.content
+    if (content) {
+      event.sender.send('ai:stream-chunk', { text: content })
+    }
+    const toolCalls = chunk.choices[0]?.delta?.tool_calls
+    if (toolCalls) {
+      event.sender.send('ai:stream-tool-call', { toolCalls })
+    }
+  }
+
+  event.sender.send('ai:stream-done', {})
 })
 ```
 
@@ -239,7 +256,7 @@ Inspirado em Claude Code / Codex: recebe tarefa → planeja → seleciona ferram
 
 ### 4.2 Ferramentas do Agente (Tools)
 
-Implementadas como tools do Vercel AI SDK:
+Implementadas como tools OpenAI-compatible (function calling):
 
 #### Ferramentas de Leitura & Navegação
 
@@ -796,9 +813,9 @@ Jornalistas têm visibilidade completa sobre o que a IA escreve no `metadata.md`
 ## 9. Contratos com Outros Domínios
 
 ### ← Consome de Workspace & Infra
-- `trpc.ai.*` — Engine de AI (streaming, tools)
-- `trpc.db.*` — Persistência de chat, busca
-- `trpc.files.*` — Leitura/escrita de arquivos
+- `ipc:ai.*` — Engine de AI (streaming, tools)
+- `ipc:db.*` — Persistência de chat, busca
+- `ipc:files.*` — Leitura/escrita de arquivos
 - Zustand stores compartilhados
 
 ### ← Consome de Sources
@@ -836,9 +853,7 @@ Jornalistas têm visibilidade completa sobre o que a IA escreve no `metadata.md`
     "rehype-highlight": "^7",
     "gray-matter": "^4",
     "minisearch": "^7",
-    "@tiptap/react": "^2",
-    "@tiptap/starter-kit": "^2",
-    "@tiptap/extension-mention": "^2",
+    "react-mentions": "^4",
     "cmdk": "^1",
     "gpt-tokenizer": "^3.4",
     "cheerio": "^1.0",

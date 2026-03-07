@@ -1,0 +1,37 @@
+---
+description: Preload scripts — contextBridge, APIs tipadas, streaming via IPC; nunca expor ipcRenderer
+globs: "src/preload/**"
+alwaysApply: false
+---
+
+# Preload Script (Electron)
+
+## Regras de segurança
+
+- **Nunca** expor `ipcRenderer` diretamente ao renderer.
+- Expor apenas APIs tipadas via `contextBridge.exposeInMainWorld`.
+- Um único namespace (ex.: `api`) com métodos bem definidos.
+
+## Padrão de API
+
+```typescript
+// ✅ BOM — bridge tipado
+contextBridge.exposeInMainWorld('api', {
+  someAction: (args: Args) => ipcRenderer.invoke('channel:action', args),
+  onStream: (cb: (data: StreamData) => void) => {
+    const handler = (_: unknown, data: StreamData) => cb(data);
+    ipcRenderer.on('stream:data', handler);
+    return () => ipcRenderer.removeListener('stream:data', handler);
+  },
+});
+```
+
+## Streaming
+
+- Eventos do main para o renderer via `ipcRenderer.on(channel, (_, data) => callback(data))`.
+- Expor no bridge como funções que registram callback e opcionalmente retornam unsubscribe.
+- Manter tipagem alinhada a `src/shared/ipc-schema.ts` (ou tipos derivados).
+
+## Tipos no renderer
+
+- Declarar `window.api` em um arquivo de tipos (ex.: `renderer/types/global.d.ts`) com a mesma forma exposta no preload, para type-safety no React.

@@ -1,0 +1,46 @@
+---
+description: Estratégia de testes — Vitest (unit), Playwright (e2e), teste visual com agent-browser via CDP
+globs: "tests/**,**/*.test.*,**/*.spec.*"
+alwaysApply: false
+---
+
+# Testing Strategy
+
+## Unit tests
+
+- **Vitest** para lógica de negócio, stores (Zustand), utils, parsers.
+- Arquivos em `tests/unit/` com sufixo `*.test.ts` (ou `*.test.tsx`).
+- Mockar IPC e módulos do main quando testar código do renderer em isolamento.
+
+## E2E tests
+
+- **Playwright** para fluxos completos do app Electron (abrir janela, navegar, preencher formulários, ver resultado).
+- Arquivos em `tests/e2e/` com sufixo `*.spec.ts`.
+- Configurar Playwright para Electron conforme documentação (launch do app empacotado ou em dev).
+
+## Teste visual com CDP (skill electron)
+
+Para validar que a UI está correta após implementar features:
+
+1. **Build** — `pnpm build` ou `pnpm dev`.
+2. **Lançar com CDP** — Executar o app com `--remote-debugging-port=9222` (ex.: script no package.json ou binário em dist).
+3. **Conectar** — `agent-browser connect 9222` (ou `npx agent-browser connect 9222`).
+4. **Snapshot** — `agent-browser snapshot -i` para listar elementos e refs.
+5. **Screenshot** — `agent-browser screenshot nome.png` para inspeção visual.
+6. **Dark mode** — Usar `--color-scheme dark` ou `AGENT_BROWSER_COLOR_SCHEME=dark` se o app estiver em tema escuro.
+
+O agente pode usar esse fluxo para verificar se layout, textos e botões estão corretos.
+
+## Registro
+
+- **.agents/test-registry.md** — Rastreia testes por commit (hash, feature, arquivos, comandos).
+- **/post-commit-tests** — Atualiza o registro após cada commit de código.
+- **/run-tests [all|last]** — Roda suíte completa ou só testes do último commit registrado.
+
+## Estrutura
+
+```
+tests/
+  unit/     (*.test.ts / *.test.tsx)
+  e2e/      (*.spec.ts)
+```

@@ -1,0 +1,33 @@
+---
+description: SQLite e Kysely — better-sqlite3, schema, migrations; dados editoriais no filesystem
+globs: "src/main/db/**"
+alwaysApply: false
+---
+
+# Database (main)
+
+## Stack
+
+- **better-sqlite3** como driver (síncrono, rápido, usado pelo Electron).
+- **Kysely** como query builder tipado (tipos derivados do schema).
+
+## Localização
+
+- DB por workspace: `~/CapybaraWorkspaces/{nome}/.capybara/data.db`.
+- Abrir/fechar conexão conforme workspace ativo; não manter DB global único para múltiplos workspaces simultâneos sem necessidade.
+
+## Tabelas principais
+
+- **sources** — Metadados e status dos documentos importados (unprocessed, processing, processed, error).
+- **entities** — Pessoas, grupos, lugares, eventos; referências ao dossier no filesystem.
+- **backlinks** — Índice de wikilinks bidirecionais para graph e navegação.
+- **search_index** — FTS5 para busca full-text no conteúdo indexado.
+
+## Migrations
+
+- Migrations versionadas (ex.: pasta `migrations/` com timestamps ou versões).
+- Rodar ao abrir workspace ou na primeira criação do workspace.
+
+## Princípio
+
+- **SQLite é índice**; os dados editoriais (conteúdo Markdown, frontmatter rico) ficam no **filesystem** (sources/, dossier/, investigations/). O DB armazena caminhos, IDs, status e índices para busca/navegação.

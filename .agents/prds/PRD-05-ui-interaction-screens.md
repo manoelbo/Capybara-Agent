@@ -689,7 +689,7 @@ Este domínio não adiciona dependências novas. Toda a UI é construída com:
 
 - `shadcn/ui` + Tailwind (PRD-01)
 - `react-force-graph-2d` (PRD-03)
-- `@tiptap/react` + `@tiptap/extension-mention` (PRD-04)
+- `react-mentions` (PRD-04)
 - `cmdk` (PRD-04)
 - `react-markdown` + unified plugins (PRD-04)
 

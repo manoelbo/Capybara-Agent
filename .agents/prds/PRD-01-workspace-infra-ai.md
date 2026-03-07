@@ -41,21 +41,21 @@ capybara-agent/
 ├── src/
 │   ├── main/                    # Main process (Node.js)
 │   │   ├── index.ts             # Entry point, window creation
-│   │   ├── trpc/                # tRPC router (IPC handlers)
-│   │   │   ├── router.ts
+│   │   ├── ipc/                 # IPC handlers (tipado com Zod)
+│   │   │   ├── schema.ts        # Zod schemas para todos os IPC channels
+│   │   │   ├── handlers.ts      # Handler registry
 │   │   │   ├── workspace.ts     # Workspace CRUD
 │   │   │   ├── files.ts         # File operations
 │   │   │   ├── ai.ts            # AI engine calls
 │   │   │   ├── settings.ts      # Preferences
 │   │   │   └── db.ts            # Database queries
 │   │   ├── ai/                  # AI Engine
-│   │   │   ├── engine.ts        # Vercel AI SDK setup
-│   │   │   ├── openrouter.ts    # OpenRouter provider config
+│   │   │   ├── engine.ts        # OpenAI SDK → OpenRouter setup
+│   │   │   ├── openrouter.ts    # OpenRouter config
 │   │   │   ├── models.ts        # Model routing logic
 │   │   │   └── agent/           # Agent loop (domínio Chat)
 │   │   ├── db/                  # Database
-│   │   │   ├── schema.ts        # Drizzle schema
-│   │   │   ├── migrations/
+│   │   │   ├── schema.ts        # Kysely type definitions
 │   │   │   └── index.ts         # Connection setup
 │   │   ├── fs/                  # File system operations
 │   │   │   ├── workspace.ts     # Workspace manager
@@ -63,7 +63,9 @@ capybara-agent/
 │   │   │   └── paths.ts         # Path utilities
 │   │   └── services/            # Business logic
 │   ├── preload/                 # Preload script
-│   │   └── index.ts             # contextBridge + tRPC expose
+│   │   └── index.ts             # contextBridge + typed IPC expose
+│   ├── shared/                  # Shared types (main + renderer)
+│   │   └── ipc-schema.ts        # Zod schemas para IPC channels
 │   └── renderer/                # Renderer process (React)
 │       ├── index.html
 │       ├── main.tsx             # React entry
@@ -72,7 +74,7 @@ capybara-agent/
 │       │   ├── ui/              # shadcn/ui primitives
 │       │   └── app/             # Product components
 │       ├── stores/              # Zustand stores
-│       ├── hooks/               # Custom hooks (trpc, etc.)
+│       ├── hooks/               # Custom hooks (useIPC, etc.)
 │       ├── lib/                 # Utilities
 │       ├── styles/
 │       │   └── globals.css      # Tailwind + theme + @font-face
@@ -104,41 +106,89 @@ const mainWindow = new BrowserWindow({
 })
 ```
 
-### 3.3 IPC com electron-trpc
+### 3.3 IPC Tipado com Zod
 
-**Main process (router):**
+**Shared schema (shared/ipc-schema.ts):**
 
 ```typescript
-import { initTRPC } from '@trpc/server'
 import { z } from 'zod'
 
-const t = initTRPC.create()
+export const ipcSchema = {
+  'workspace:create': {
+    input: z.object({ name: z.string(), apiKey: z.string() }),
+    output: z.object({ path: z.string() }),
+  },
+  'files:read': {
+    input: z.object({ path: z.string() }),
+    output: z.string(),
+  },
+  'files:write': {
+    input: z.object({ path: z.string(), content: z.string() }),
+    output: z.object({ success: z.boolean() }),
+  },
+  'ai:chat': {
+    input: z.object({
+      messages: z.array(z.object({ role: z.string(), content: z.string() })),
+      mode: z.enum(['question', 'planning', 'agent']),
+      model: z.string(),
+    }),
+    output: z.string(),
+  },
+  'settings:get': {
+    input: z.object({}),
+    output: z.record(z.unknown()),
+  },
+  'settings:set': {
+    input: z.object({ key: z.string(), value: z.unknown() }),
+    output: z.object({ success: z.boolean() }),
+  },
+} as const
 
-export const appRouter = t.router({
-  workspace: workspaceRouter,
-  files: filesRouter,
-  ai: aiRouter,
-  settings: settingsRouter,
-  db: dbRouter,
+export type IpcSchema = typeof ipcSchema
+export type IpcChannel = keyof IpcSchema
+```
+
+**Preload (typed bridge):**
+
+```typescript
+import { contextBridge, ipcRenderer } from 'electron'
+
+contextBridge.exposeInMainWorld('api', {
+  invoke: <T>(channel: string, data?: unknown): Promise<T> =>
+    ipcRenderer.invoke(channel, data),
+  on: (channel: string, callback: (...args: unknown[]) => void) => {
+    ipcRenderer.on(channel, (_event, ...args) => callback(...args))
+  },
+  off: (channel: string, callback: (...args: unknown[]) => void) => {
+    ipcRenderer.removeListener(channel, callback)
+  },
 })
-
-export type AppRouter = typeof appRouter
 ```
 
-**Preload:**
+**Main process (handler registry):**
 
 ```typescript
-import { exposeElectronTRPC } from 'electron-trpc/main'
-exposeElectronTRPC()
+import { ipcMain } from 'electron'
+import { ipcSchema, type IpcChannel } from '../shared/ipc-schema'
+
+function registerHandler<C extends IpcChannel>(
+  channel: C,
+  handler: (input: z.infer<typeof ipcSchema[C]['input']>) =>
+    Promise<z.infer<typeof ipcSchema[C]['output']>>
+) {
+  ipcMain.handle(channel, async (_event, rawInput) => {
+    const input = ipcSchema[channel].input.parse(rawInput)
+    return handler(input)
+  })
+}
 ```
 
-**Renderer (hook):**
+Para streaming de respostas do agente, usar eventos IPC tipados:
 
 ```typescript
-import { createTRPCReact } from '@trpc/react-query'
-import type { AppRouter } from '../../main/trpc/router'
-
-export const trpc = createTRPCReact<AppRouter>()
+// Main → Renderer streaming via typed events
+mainWindow.webContents.send('ai:stream-chunk', { text: chunk })
+mainWindow.webContents.send('ai:stream-done', { toolCalls: [...] })
 ```
 
 ### 3.4 Workspace Manager
@@ -171,71 +221,111 @@ Cada "Investigation Desk" é uma pasta no filesystem com estrutura fixa:
 │       └── ...
 ```
 
-### 3.5 SQLite Schema (Drizzle)
+### 3.5 SQLite Schema (Kysely)
 
 ```typescript
-import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core'
+import { Kysely, SqliteDialect } from 'kysely'
+import Database from 'better-sqlite3'
 
-export const sources = sqliteTable('sources', {
-  id: text('id').primaryKey(),
-  filename: text('filename').notNull(),
-  originalPath: text('original_path').notNull(),
-  format: text('format').notNull(),
-  status: text('status').notNull().default('unprocessed'),
-  pages: integer('pages'),
-  processedAt: text('processed_at'),
-  estimatedCost: real('estimated_cost'),
-  createdAt: text('created_at').notNull(),
-})
+interface SourcesTable {
+  id: string
+  filename: string
+  original_path: string
+  format: string
+  status: 'unprocessed' | 'processing' | 'processed' | 'error'
+  pages: number | null
+  processed_at: string | null
+  estimated_cost: number | null
+  created_at: string
+}
 
-export const entities = sqliteTable('entities', {
-  id: text('id').primaryKey(),
-  type: text('type').notNull(), // person | group | place | event
-  name: text('name').notNull(),
-  filePath: text('file_path').notNull(),
-  category: text('category'),
-  tags: text('tags'), // JSON array
-  createdAt: text('created_at').notNull(),
-})
+interface EntitiesTable {
+  id: string
+  type: 'person' | 'group' | 'place' | 'event'
+  name: string
+  file_path: string
+  category: string | null
+  tags: string | null // JSON array
+  created_at: string
+}
 
-export const backlinks = sqliteTable('backlinks', {
-  id: text('id').primaryKey(),
-  sourceFile: text('source_file').notNull(),
-  targetEntity: text('target_entity').notNull(),
-  context: text('context'),
-})
+interface BacklinksTable {
+  id: string
+  source_file: string
+  target_entity: string
+  context: string | null
+}
+
+interface SearchIndexTable {
+  id: string
+  file_path: string
+  type: string
+  title: string
+  preview: string | null
+  tags: string | null
+  updated_at: string
+}
 
 // Chat sessions — MVP: in-memory only (Zustand store)
-// Post-MVP: persist to SQLite with these tables:
-//
-// export const chatSessions = sqliteTable('chat_sessions', { ... })
-// export const chatMessages = sqliteTable('chat_messages', { ... })
+// Post-MVP: persist to SQLite with ChatSessions + ChatMessages tables
 
-export const searchIndex = sqliteTable('search_index', {
-  id: text('id').primaryKey(),
-  filePath: text('file_path').notNull(),
-  type: text('type').notNull(),
-  title: text('title').notNull(),
-  preview: text('preview'),
-  tags: text('tags'),
-  updatedAt: text('updated_at').notNull(),
-})
+interface CapybaraDB {
+  sources: SourcesTable
+  entities: EntitiesTable
+  backlinks: BacklinksTable
+  search_index: SearchIndexTable
+}
+
+export function createDatabase(dbPath: string) {
+  const dialect = new SqliteDialect({
+    database: new Database(dbPath),
+  })
+  return new Kysely<CapybaraDB>({ dialect })
+}
 ```
 
-### 3.6 AI Engine — Vercel AI SDK + OpenRouter
+Criação das tabelas via SQL direto no startup (sem ferramenta de migrations):
 
 ```typescript
-import { openrouter } from '@openrouter/ai-sdk-provider'
+async function initializeSchema(db: Kysely<CapybaraDB>) {
+  await db.schema
+    .createTable('sources')
+    .ifNotExists()
+    .addColumn('id', 'text', col => col.primaryKey())
+    .addColumn('filename', 'text', col => col.notNull())
+    .addColumn('original_path', 'text', col => col.notNull())
+    .addColumn('format', 'text', col => col.notNull())
+    .addColumn('status', 'text', col => col.notNull().defaultTo('unprocessed'))
+    .addColumn('pages', 'integer')
+    .addColumn('processed_at', 'text')
+    .addColumn('estimated_cost', 'real')
+    .addColumn('created_at', 'text', col => col.notNull())
+    .execute()
+
+  // ... similarly for entities, backlinks, search_index
+}
+```
+
+### 3.6 AI Engine — OpenAI SDK → OpenRouter
+
+```typescript
+import OpenAI from 'openai'
+
+export function createOpenRouterClient(apiKey: string) {
+  return new OpenAI({
+    baseURL: 'https://openrouter.ai/api/v1',
+    apiKey,
+  })
+}
 
 export const modelRouting = {
-  processing: 'google/gemini-2.5-flash-lite', // alt: 'mistralai/mistral-ocr'
+  processing: 'google/gemini-2.5-flash-lite',
   writing: 'google/gemini-3-flash',
   reasoning: 'google/gemini-3-pro',
 }
 
-export function getModel(task: keyof typeof modelRouting) {
-  const modelId = modelRouting[task]
-  return openrouter(modelId)
+export function getModelId(task: keyof typeof modelRouting): string {
+  return modelRouting[task]
 }
 ```
 
@@ -293,7 +383,7 @@ export function getTheme(): 'light' | 'dark' {
 }
 ```
 
-Persistido via tRPC → main process → config.json. Carregado no startup antes do React render.
+Persistido via IPC → main process → config.json. Carregado no startup antes do React render.
 
 ---
 
@@ -302,17 +392,11 @@ Persistido via tRPC → main process → config.json. Carregado no startup antes
 ```json
 {
   "dependencies": {
-    "electron-trpc": "^0.6",
-    "@trpc/server": "^11",
-    "@trpc/client": "^11",
-    "@trpc/react-query": "^11",
-    "@tanstack/react-query": "^5",
+    "openai": "^4",
     "zod": "^3",
     "better-sqlite3": "^11",
-    "drizzle-orm": "^0.36",
+    "kysely": "^0.27",
     "chokidar": "^5",
-    "ai": "^4",
-    "@openrouter/ai-sdk-provider": "^2",
     "zustand": "^5",
     "electron-store": "^10"
   },
@@ -320,7 +404,6 @@ Persistido via tRPC → main process → config.json. Carregado no startup antes
     "electron": "^34",
     "electron-vite": "^3",
     "electron-builder": "^25",
-    "drizzle-kit": "^0.30",
     "vitest": "^3",
     "@playwright/test": "^1.50"
   }
@@ -339,17 +422,17 @@ Persistido via tRPC → main process → config.json. Carregado no startup antes
 - Keyboard shortcuts — ver PRD-05 §12
 
 ### → Para Sources & Document Processing
-- `trpc.files.*` — CRUD de arquivos no workspace
-- `trpc.ai.streamText()` — Chamada ao LLM para processamento
-- `trpc.db.sources.*` — Status de processamento no SQLite
+- `ipc:files.*` — CRUD de arquivos no workspace
+- `ipc:ai.stream` — Chamada ao LLM para processamento (streaming via eventos IPC)
+- `ipc:db.sources.*` — Status de processamento no SQLite
 - File watcher emite eventos de criação/modificação
 
 ### → Para Dossier & Investigations
-- `trpc.files.*` — Leitura/escrita de arquivos de dossiê
-- `trpc.db.entities.*` — Indexação de entidades
-- `trpc.db.backlinks.*` — Registro de [[wikilinks]]
+- `ipc:files.*` — Leitura/escrita de arquivos de dossiê
+- `ipc:db.entities.*` — Indexação de entidades
+- `ipc:db.backlinks.*` — Registro de [[wikilinks]]
 
 ### → Para Chat & Agent
-- `trpc.ai.*` — Engine de AI (streaming, tool calling)
-- `trpc.db.searchIndex.*` — Busca para autocomplete de menções
+- `ipc:ai.*` — Engine de AI (streaming, tool calling)
+- `ipc:db.searchIndex.*` — Busca para autocomplete de menções
 - Chat sessions: in-memory (Zustand) no MVP; SQLite persistence pós-MVP
