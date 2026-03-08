@@ -1,0 +1,204 @@
+/* IBM Plex Sans Thai Looped — corpo principal */
+@font-face {
+  font-family: 'IBM Plex Sans Thai Looped';
+  font-style: normal;
+  font-weight: 300;
+  src: url('@ibm/plex-sans-thai-looped/fonts/split/woff2/IBMPlexSansThaiLooped-Light.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Sans Thai Looped';
+  font-style: normal;
+  font-weight: 400;
+  src: url('@ibm/plex-sans-thai-looped/fonts/split/woff2/IBMPlexSansThaiLooped-Regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Sans Thai Looped';
+  font-style: normal;
+  font-weight: 500;
+  src: url('@ibm/plex-sans-thai-looped/fonts/split/woff2/IBMPlexSansThaiLooped-Medium.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Sans Thai Looped';
+  font-style: normal;
+  font-weight: 600;
+  src: url('@ibm/plex-sans-thai-looped/fonts/split/woff2/IBMPlexSansThaiLooped-SemiBold.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Sans Thai Looped';
+  font-style: normal;
+  font-weight: 700;
+  src: url('@ibm/plex-sans-thai-looped/fonts/split/woff2/IBMPlexSansThaiLooped-Bold.woff2') format('woff2');
+}
+
+/* IBM Plex Mono — código */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  src: url('@ibm/plex-mono/fonts/split/woff2/IBMPlexMono-Regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  src: url('@ibm/plex-mono/fonts/split/woff2/IBMPlexMono-Medium.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 700;
+  src: url('@ibm/plex-mono/fonts/split/woff2/IBMPlexMono-Bold.woff2') format('woff2');
+}
+
+/* IBM Plex Sans JP — fallback japonês */
+@font-face {
+  font-family: 'IBM Plex Sans JP';
+  font-style: normal;
+  font-weight: 400;
+  src: url('@ibm/plex-sans-jp/fonts/split/woff2/IBMPlexSansJP-Regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Sans JP';
+  font-style: normal;
+  font-weight: 500;
+  src: url('@ibm/plex-sans-jp/fonts/split/woff2/IBMPlexSansJP-Medium.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Sans JP';
+  font-style: normal;
+  font-weight: 700;
+  src: url('@ibm/plex-sans-jp/fonts/split/woff2/IBMPlexSansJP-Bold.woff2') format('woff2');
+}
+
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: 'IBM Plex Sans Thai Looped', 'IBM Plex Sans JP', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --font-serif: 'IBM Plex Sans JP', ui-sans-serif, system-ui, sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/* ===== TEMA CAPYBARA 0 (light) ===== */
+:root {
+  --radius: 0rem;
+  --background: oklch(1.0000 0 0);
+  --foreground: oklch(0 0 0);
+  --card: oklch(1.0000 0 0);
+  --card-foreground: oklch(0 0 0);
+  --popover: oklch(1.0000 0 0);
+  --popover-foreground: oklch(0 0 0);
+  --primary: oklch(0.6654 0.1594 292.3994);
+  --primary-foreground: oklch(1.0000 0 0);
+  --secondary: oklch(0.7805 0.1302 204.3029);
+  --secondary-foreground: oklch(1.0000 0 0);
+  --muted: oklch(0.9551 0 0);
+  --muted-foreground: oklch(0.3211 0 0);
+  --accent: oklch(0.8744 0.1610 95.5815);
+  --accent-foreground: oklch(0 0 0);
+  --destructive: oklch(0.7621 0.1182 33.3830);
+  --destructive-foreground: oklch(1.0000 0 0);
+  --border: oklch(0 0 0);
+  --input: oklch(0.5555 0 0);
+  --ring: oklch(0.9865 0.0066 286.2780);
+  --chart-1: oklch(0.6654 0.1594 292.3994);
+  --chart-2: oklch(0.7805 0.1302 204.3029);
+  --chart-3: oklch(0.8744 0.1610 95.5815);
+  --chart-4: oklch(0.7412 0.1398 1.5282);
+  --chart-5: oklch(0.7958 0.1668 158.8194);
+  --sidebar: oklch(1.0000 0 0);
+  --sidebar-foreground: oklch(0 0 0);
+  --sidebar-primary: oklch(0.6654 0.1594 292.3994);
+  --sidebar-primary-foreground: oklch(1.0000 0 0);
+  --sidebar-accent: oklch(0.8744 0.1610 95.5815);
+  --sidebar-accent-foreground: oklch(0 0 0);
+  --sidebar-border: oklch(0 0 0);
+  --sidebar-ring: oklch(0.9865 0.0066 286.2780);
+}
+
+/* ===== TEMA CAPYBARA 0 (dark) ===== */
+.dark {
+  --background: oklch(0 0 0);
+  --foreground: oklch(1.0000 0 0);
+  --card: oklch(0.2639 0.0306 273.3087);
+  --card-foreground: oklch(1.0000 0 0);
+  --popover: oklch(0.2639 0.0306 273.3087);
+  --popover-foreground: oklch(1.0000 0 0);
+  --primary: oklch(0.8649 0.0662 289.7121);
+  --primary-foreground: oklch(0 0 0);
+  --secondary: oklch(0.8072 0.1090 201.1642);
+  --secondary-foreground: oklch(0 0 0);
+  --muted: oklch(0.3211 0 0);
+  --muted-foreground: oklch(0.8452 0 0);
+  --accent: oklch(0.9594 0.1242 105.5589);
+  --accent-foreground: oklch(0 0 0);
+  --destructive: oklch(0.8703 0.0632 32.9827);
+  --destructive-foreground: oklch(0 0 0);
+  --border: oklch(0.4459 0 0);
+  --input: oklch(1.0000 0 0);
+  --ring: oklch(0.8649 0.0662 289.7121);
+  --chart-1: oklch(0.8649 0.0662 289.7121);
+  --chart-2: oklch(0.8072 0.1090 201.1642);
+  --chart-3: oklch(0.9594 0.1242 105.5589);
+  --chart-4: oklch(0.8484 0.0799 356.8570);
+  --chart-5: oklch(0.8522 0.1189 162.9113);
+  --sidebar: oklch(0 0 0);
+  --sidebar-foreground: oklch(1.0000 0 0);
+  --sidebar-primary: oklch(0.8649 0.0662 289.7121);
+  --sidebar-primary-foreground: oklch(0 0 0);
+  --sidebar-accent: oklch(0.9594 0.1242 105.5589);
+  --sidebar-accent-foreground: oklch(0 0 0);
+  --sidebar-border: oklch(1.0000 0 0);
+  --sidebar-ring: oklch(0.8649 0.0662 289.7121);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    letter-spacing: normal;
+  }
+}

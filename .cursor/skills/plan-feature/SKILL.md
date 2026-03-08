@@ -1,13 +1,13 @@
 ---
 name: Plan Feature
-description: Criar plano de implementação completo para uma feature com análise de codebase, inspiração nos projetos de referência, pesquisa Context7 e template pronto para o agente de execução.
+description: Criar plano de implementação completo para uma feature com análise de codebase e template pronto para o agente de execução.
 ---
 
 # Skill: Plan Feature
 
 ## Missão
 
-Transformar um pedido de feature em um **plano de implementação completo** por meio de: entendimento da feature, análise do codebase, **inspiração nos projetos em `.agents/inspirations/`**, pesquisa em documentação via **Context7 (MCP)** e pensamento estratégico. O plano é salvo em `.agents/plans/{kebab-case-descriptive-name}.md`.
+Transformar um pedido de feature em um **plano de implementação completo** por meio de: entendimento da feature, análise do codebase e pensamento estratégico. O plano é salvo em `.agents/plans/{kebab-case-descriptive-name}.md`.
 
 **Princípio central:** Nesta fase **não escrevemos código**. O objetivo é produzir um plano rico em contexto para que um agente de execução implemente a feature em **uma passada**, sem precisar de pesquisas adicionais.
 
@@ -18,7 +18,7 @@ Transformar um pedido de feature em um **plano de implementação completo** por
 ## Quando usar
 
 - Quando o usuário pedir para **planejar uma nova feature**, **criar um plano de implementação** ou usar o comando **plan-feature**.
-- **Passo a passo completo:** O fluxo detalhado (incluindo inspiração e Context7) está no **plano mestre** `.agents/plan-feature-master.md`. O comando plan-feature instrui o agente a executar esse plano sem pular etapas.
+- **Passo a passo completo:** O fluxo está no **plano mestre** `.agents/plan-feature-master.md`. O comando plan-feature instrui o agente a executar esse plano sem pular etapas.
 - Entrada: nome ou descrição da feature (ex.: "add user authentication", "implementar tool editFile do agente", "sidebar colapsável").
 
 ---
@@ -29,7 +29,7 @@ Transformar um pedido de feature em um **plano de implementação completo** por
 
 ---
 
-## Processo de planejamento (5 fases)
+## Processo de planejamento (4 fases)
 
 ### Fase 1: Feature Understanding
 
@@ -42,7 +42,7 @@ Transformar um pedido de feature em um **plano de implementação completo** por
 
 ---
 
-### Fase 2: Codebase Intelligence + Inspiração
+### Fase 2: Codebase Intelligence
 
 **2.1 Análise de estrutura do projeto**
 
@@ -51,19 +51,13 @@ Transformar um pedido de feature em um **plano de implementação completo** por
 - Identificar fronteiras de serviços/componentes, arquivos de configuração, ambiente e build.
 - Procurar `CLAUDE.md`, `.cursor/rules`, convenções do projeto.
 
-**2.2 Inspiração nos projetos de referência**
-
-- **Executar a skill inspiration-research** (`.cursor/skills/inspiration-research/SKILL.md`) usando como **tópico** a feature atual (ex.: "como implementar a tool editFile do agente", "layout sidebar + viewer + chat").
-- Consultar a rule `capybara-agent-inspiration.mdc` e seguir o processo em 5 passos da skill: subagentes **explore** em paralelo → agregar resumos → subagente **generalPurpose** (decisor) → obter recomendação de qual(is) projeto(s) seguir.
-- Incorporar a **recomendação de inspiração** no plano (seção CONTEXT REFERENCES ou NOTES): quais projetos em `.agents/inspirations/` usar como referência e por quê.
-
-**2.3 Reconhecimento de padrões**
+**2.2 Reconhecimento de padrões**
 
 - Buscar implementações similares no codebase.
 - Documentar convenções: nomenclatura, organização de arquivos, tratamento de erros, logging.
 - Extrair padrões do domínio da feature e anti-padrões a evitar.
 
-**2.4 Dependências, testes e integração**
+**2.3 Dependências, testes e integração**
 
 - Listar dependências externas relevantes.
 - Identificar framework de testes, estrutura e exemplos de testes.
@@ -73,17 +67,13 @@ Transformar um pedido de feature em um **plano de implementação completo** por
 
 ---
 
-### Fase 3: Pesquisa externa (Context7)
+### Context7 (opcional)
 
-- Usar o **MCP Context7** para documentação e exemplos atualizados:
-  1. **resolve-library-id** (server `plugin-context7-plugin-context7`): para cada biblioteca/framework relevante (ex.: React, Electron, Vercel AI SDK, Drizzle), chamar com `query` relacionado à feature e `libraryName` adequado. Obter o **library ID** no formato `/org/project` ou `/org/project/version`.
-  2. **query-docs**: para cada library ID obtido, fazer perguntas **específicas** (ex.: "How to define tool/function calling with streaming", "Electron IPC best practices"). Máximo **3 chamadas query-docs por biblioteca**; priorizar o que for mais relevante para a feature.
-- **Dividir por domínio** quando fizer sentido: ex. uma rodada para "agente/tools", outra para "UI/sidebar", outra para "Markdown/renderer", cada uma com as libs e perguntas adequadas.
-- Compilar as referências no plano na seção **Relevant Documentation**, com links, seção específica e "Why: ...".
+**Se houver dúvidas ou você achar necessário**, faça pesquisas no **Context7** (MCP) para consultar documentações das bibliotecas envolvidas. Use **apenas em casos de dúvida**; não é obrigatório em todo planejamento. **Se usar:** inclua na seção **Relevant Documentation** do plano não só link e "why", mas também **Key takeaways / Essential content** (2–4 frases ou um snippet mínimo por referência) com o que o implementador precisa saber daquela doc — assim o plano fica autocontido e o executor em outra conversa não precisa reconsultar Context7 (ver seção "Context7 (MCP)" abaixo para ferramentas).
 
 ---
 
-### Fase 4: Pensamento estratégico
+### Fase 3: Pensamento estratégico
 
 - Avaliar como a feature se encaixa na arquitetura existente.
 - Identificar dependências críticas e ordem de execução.
@@ -93,9 +83,9 @@ Transformar um pedido de feature em um **plano de implementação completo** por
 
 ---
 
-### Fase 5: Geração do plano (template)
+### Fase 4: Geração do plano (template)
 
-Gerar **um único arquivo** em `.agents/plans/{kebab-case-descriptive-name}.md` usando o template abaixo. Preencher todas as seções com base nas fases 1–4. Criar o diretório `.agents/plans/` se não existir.
+Na Fase 4, abrir `.cursor/skills/plan-feature/SKILL.md`, seção **"Template do plano"**, e preencher **todas** as seções com base nas Fases 1–3 (e em referências Context7 apenas se tiver feito pesquisa opcional). Gerar **um único arquivo** em `.agents/plans/{kebab-case-descriptive-name}.md`. Criar o diretório `.agents/plans/` se não existir. Quando a feature tiver UI ou Electron, preencher também a seção **VISUAL / E2E CHECKS** com passos concretos (abrir URL/app, snapshot, verificar elemento, clicar, verificar resultado, screenshot) e indicar se o teste é via Electron (CDP) ou web (localhost/URL).
 
 ---
 
@@ -137,10 +127,6 @@ So that <benefit/value>
 
 ## CONTEXT REFERENCES
 
-### Inspiration (projects in .agents/inspirations/)
-
-<Summary of inspiration-research result: which project(s) to use as reference and why>
-
 ### Relevant Codebase Files — IMPORTANT: YOU MUST READ THESE BEFORE IMPLEMENTING!
 
 <List files with line numbers and relevance>
@@ -153,13 +139,14 @@ So that <benefit/value>
 - `path/to/new_file.ts` - Purpose
 - ...
 
-### Relevant Documentation — YOU SHOULD READ THESE BEFORE IMPLEMENTING!
+### Relevant Documentation — YOU SHOULD READ THESE BEFORE IMPLEMENTING! (optional; add if Context7 was used)
 
-<From Context7 research — include library, section, and why>
+<If you consulted Context7 or have doc links — include for each: library, section, why, and Key takeaways / Essential content (2–4 sentences or a minimal code snippet the executor must know). The plan must be self-contained so the executor in a new conversation does not need to re-query Context7.>
 
 - [Documentation Link 1](url#section)
   - Specific section: ...
   - Why: ...
+  - **Key takeaways / Essential content:** (e.g. API signature, short example, or caveat the implementer needs)
 - ...
 
 ### Patterns to Follow
@@ -232,6 +219,20 @@ Execute every task in order, top to bottom. Each task is atomic and independentl
 
 ---
 
+## VISUAL / E2E CHECKS (opcional — preencher quando a feature tiver UI ou Electron)
+
+Quando a feature envolver interface ou app desktop, descrever passos concretos para o agente validar no navegador. O executor usará skill electron (CDP) ou MCP cursor-ide-browser (web); se houver skill/plugin Vercel para preview ou teste em browser, seguir suas orientações.
+
+**Tipo de teste:** [ ] Electron (CDP)  [ ] Web (localhost/URL)
+
+**Passos (exemplo):**
+1. Abrir [URL ou app com CDP]; fazer snapshot.
+2. Verificar que [elemento/fluxo X] está visível.
+3. Clicar em [alvo Y]; verificar que [resultado Z].
+4. Screenshot final para registro.
+
+---
+
 ## COMPLETION CHECKLIST
 
 - [ ] All tasks completed in order
@@ -246,24 +247,20 @@ Execute every task in order, top to bottom. Each task is atomic and independentl
 
 ## NOTES
 
-<Design decisions, trade-offs, inspiration summary>
+<Design decisions, trade-offs>
 ```
 
 ---
 
-## Context7 (MCP)
+## Context7 (MCP) — opcional
 
-- **Server:** `plugin-context7-plugin-context7`
-- **Ferramentas:**
-  1. **resolve-library-id** — `query` (contexto da feature), `libraryName` (nome da lib). Retorna library ID no formato `/org/project` ou `/org/project/version`. Chamar antes de query-docs.
-  2. **query-docs** — `libraryId` (obtido acima), `query` (pergunta específica). Máximo 3 chamadas por pergunta; ser específico nas queries.
-- Usar para: documentação oficial, exemplos de código, boas práticas, breaking changes. Incluir resultados na seção **Relevant Documentation** do plano com link, seção e "Why".
+Use **apenas se houver dúvidas ou você achar necessário** consultar documentações. Servidor: `plugin-context7-plugin-context7`. Ferramentas: **resolve-library-id** (`query`, `libraryName`) para obter library ID; **query-docs** (`libraryId`, `query`) para perguntas específicas. Ao preencher a seção **Relevant Documentation** do plano, inclua para cada referência: link, seção, motivo (**Why**) e **Key takeaways / Essential content** (2–4 frases ou snippet mínimo) com o que o executor precisa saber — para que o plano seja autocontido em outra conversa.
 
 ---
 
 ## Critérios de qualidade do plano
 
-- **Context completeness:** Padrões identificados, libs documentadas com links, integrações mapeadas, gotchas e anti-padrões registrados; toda tarefa com comando de validação.
+- **Context completeness:** Padrões identificados, libs documentadas com links **e key takeaways** (conteúdo essencial no plano), integrações mapeadas, gotchas e anti-padrões registrados; toda tarefa com comando de validação.
 - **Implementation ready:** Um desenvolvedor (ou agente) consegue executar sem contexto extra; tarefas em ordem de dependência; cada tarefa atômica e testável; referências com file:line.
 - **Pattern consistency:** Tarefas seguem convenções do projeto; testes alinhados aos padrões existentes.
 - **Information density:** Referências específicas e acionáveis; URLs com âncora quando possível; comandos de validação não interativos.

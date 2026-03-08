@@ -17,7 +17,7 @@ A pasta **`.agents`** guarda o **conteúdo e os artefatos** do projeto usados pe
 
 ## Uso pelos comandos do Cursor
 
-- **plan-feature** → lê `plan-feature-master.md`, grava em `plans/{nome}.md`, usa `inspirations/` e a rule de inspiração.
+- **plan-feature** → lê `plan-feature-master.md`, grava em `plans/{nome}.md`.
 - **inspire-from-projects** → pesquisa em `inspirations/` e usa a rule em `.cursor/rules/`.
 - **execute-plan** → lê planos em `plans/*.md`.
 - **load-project-context** → lê PRDs, `capybara_agent_project.md`, lista `plans/`.

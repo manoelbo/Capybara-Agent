@@ -1,11 +1,11 @@
 ---
-description: Criar plano de implementação completo para uma feature (análise de codebase, inspiração, Context7)
+description: Criar plano de implementação completo para uma feature (análise de codebase)
 argument-hint: [nome ou descrição da feature]
 ---
 
 # Plan Feature
 
-Execute o **plano mestre** em `.agents/plan-feature-master.md` do início ao fim. **Não pule nenhuma etapa:** Fase 1 (Feature Understanding), Fase 2 (Codebase + **Inspiração** com mcp_task explore e generalPurpose), Fase 3 (**Context7**: resolve-library-id e query-docs), Fase 4 (Pensamento estratégico), Fase 5 (Gerar `.agents/plans/{kebab-case-name}.md`).
+Usar a **skill Plan Feature** (`.cursor/skills/plan-feature/SKILL.md`) e executar o **plano mestre** em `.agents/plan-feature-master.md` do início ao fim. **Não pule nenhuma etapa:** Fase 1 (Feature Understanding), Fase 2 (Codebase Intelligence), Fase 3 (Pensamento estratégico), Fase 4 (Gerar `.agents/plans/{kebab-case-name}.md`).
 
 **Entrada da feature:** **$ARGUMENTS**
 
@@ -13,6 +13,5 @@ Se **$ARGUMENTS** estiver vazio, peça ao usuário que descreva a feature em uma
 
 **Regras:**
 - Nesta fase **não escreva código**; apenas produza o plano.
-- Na Fase 2.2 execute **todos** os passos de inspiração: consultar a rule → mcp_task explore (em paralelo, um por projeto em `.agents/inspirations/`) → agregar → mcp_task generalPurpose (decisor) → incluir recomendação no plano.
-- Na Fase 3 chame o MCP Context7 (**resolve-library-id** depois **query-docs**) para cada biblioteca relevante; inclua os resultados em Relevant Documentation.
-- Ao final entregue o relatório (resumo, path do plano, complexidade, riscos, confiança 1–10).
+- **Context7:** Se houver dúvidas ou você achar necessário, faça pesquisas no Context7 (MCP) para consultar documentações; use **apenas em casos de dúvida**.
+- Ao final **gerar** o arquivo `.agents/plans/{kebab-case-name}.md` conforme o template da skill e entregar o relatório final (resumo, path do plano, complexidade, riscos, confiança 1–10).

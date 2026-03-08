@@ -31,7 +31,7 @@ Usar o **shadcn MCP** no Cursor para busca por linguagem natural ou a CLI (`pnpm
 
 | Skill | Uso |
 |-------|-----|
-| **plan-feature** | Planejar uma feature completa (análise, inspiração, Context7, plano em disco). Nunca escreve código. |
+| **plan-feature** | Planejar uma feature completa (análise, Context7, plano em disco). Nunca escreve código. |
 | **inspiration-research** | Pesquisar inspiração nos projetos em `.agents/inspirations/` (subagentes explore + decisor). |
 | **full-stack-electron** | Consultar padrões e API do Electron (main/renderer, IPC, BrowserWindow, packaging). |
 | **electron** (CDP) | Testar o app visualmente: lançar com `--remote-debugging-port`, conectar via agent-browser, snapshot/screenshot. |

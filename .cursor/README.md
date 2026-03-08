@@ -19,7 +19,7 @@ Skills são instruções que o agente usa automaticamente quando o contexto se e
 
 | Skill | Uso |
 |-------|-----|
-| **plan-feature** | Criar plano de implementação completo (codebase + inspiração + Context7). Ver também o plano mestre em `.agents/plan-feature-master.md`. |
+| **plan-feature** | Criar plano de implementação completo (codebase + Context7). Ver também o plano mestre em `.agents/plan-feature-master.md`. |
 | **inspiration-research** | Pesquisar nos projetos em `.agents/inspirations/` e recomendar qual seguir para um tópico. |
 | **electron** | Automatizar apps Electron (Slack, VS Code, Figma, etc.) via agent-browser e CDP. |
 
