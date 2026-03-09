@@ -14,6 +14,7 @@ App desktop **Electron** de investigação jornalística (OSINT) que usa LLMs de
 - **Runtime:** Node.js (Electron)
 - **Build:** electron-vite, electron-builder
 - **Frontend:** React, TypeScript strict, Tailwind, shadcn/ui, shadcnblocks (Pro), Zustand
+- **Iconografia:** Phosphor Icons (`@phosphor-icons/react`) como biblioteca padrão
 - **Layout base:** Application Shell 9 (shadcnblocks) — IDE-style com Activity Bar + File Explorer
 - **Backend (main):** better-sqlite3, Kysely, chokidar, electron-store
 - **AI:** OpenRouter (OpenAI SDK), Zod (schemas IPC)
@@ -38,6 +39,8 @@ src/
   shared/     ipc-schema.ts (Zod)
   renderer/   components/, stores/, hooks/, lib/, styles/
 ```
+
+Testes do **Document Processing Tool** em `lab/document-processing-tool/tests/` (unit + E2E smoke); comando **`pnpm test`** roda `pnpm run test:doc-tool`.
 
 ## Workspace no disco
 
