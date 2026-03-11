@@ -8,3 +8,10 @@ coverage
 *.log*
 .env.local
 .env.test
+
+# Agent lab filesystem: gerado em runtime. Só versionamos código + PDFs em source para testes na nuvem.
+lab/agent/filesystem/*
+!lab/agent/filesystem/source/
+lab/agent/filesystem/source/*
+!lab/agent/filesystem/source/*.pdf
+!lab/agent/filesystem/source/README.md

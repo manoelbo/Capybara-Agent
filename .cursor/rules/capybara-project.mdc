@@ -40,7 +40,7 @@ src/
   renderer/   components/, stores/, hooks/, lib/, styles/
 ```
 
-Testes do **Document Processing Tool** em `lab/document-processing-tool/tests/` (unit + E2E smoke); comando **`pnpm test`** roda `pnpm run test:doc-tool`.
+Testes do **Document Processing Tool** em `lab/agent/tests/document-processing/` (unit + E2E smoke); comando **`pnpm test`** roda `pnpm run test:doc-tool`.
 
 ## Workspace no disco
 

@@ -47,6 +47,6 @@ tests/
 
 ## Document Processing Tool
 
-- Testes em **`lab/document-processing-tool/tests/`**: unitários (fila/checkpoint, sem API) e E2E smoke (pipeline + fila em pasta temporária, limpeza ao final).
+- Testes em **`lab/agent/tests/document-processing/`**: unitários (fila/checkpoint, sem API) e E2E smoke (pipeline + fila em pasta temporária, limpeza ao final).
 - O comando master **`pnpm test`** inclui **`pnpm run test:doc-tool`** para validar que a ferramenta de processamento de documentos segue funcionando.
 - E2E smoke exige `OPENROUTER_API_KEY` em `.env.local`; sem ela o E2E é ignorado.

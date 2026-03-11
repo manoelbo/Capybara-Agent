@@ -1,0 +1,25 @@
+{
+  "name": "agent-lab",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Laboratorio isolado do agente investigativo Reverso",
+  "scripts": {
+    "typecheck": "node ../../node_modules/typescript/bin/tsc --noEmit -p tsconfig.json",
+    "init": "node ../../node_modules/tsx/dist/cli.mjs src/index.ts init",
+    "agent-setup": "node ../../node_modules/tsx/dist/cli.mjs src/index.ts agent-setup",
+    "dig": "node ../../node_modules/tsx/dist/cli.mjs src/index.ts dig",
+    "create-lead": "node ../../node_modules/tsx/dist/cli.mjs src/index.ts create-lead",
+    "inquiry": "node ../../node_modules/tsx/dist/cli.mjs src/index.ts inquiry",
+    "doc-process": "node ../../node_modules/tsx/dist/cli.mjs src/index.ts doc-process",
+    "source:process-all": "node ../../node_modules/tsx/dist/cli.mjs src/index.ts doc-process process-all --source lab/agent/filesystem/source",
+    "source:process-selected": "node ../../node_modules/tsx/dist/cli.mjs src/index.ts doc-process process-selected --source lab/agent/filesystem/source",
+    "source:process-queue": "node ../../node_modules/tsx/dist/cli.mjs src/index.ts doc-process process-queue --source lab/agent/filesystem/source",
+    "source:queue-status": "node ../../node_modules/tsx/dist/cli.mjs src/index.ts doc-process queue-status --source lab/agent/filesystem/source",
+    "source:queue-clear": "node ../../node_modules/tsx/dist/cli.mjs src/index.ts doc-process queue-clear --source lab/agent/filesystem/source",
+    "source:rerun": "node ../../node_modules/tsx/dist/cli.mjs src/index.ts doc-process rerun --all --source lab/agent/filesystem/source",
+    "source:rerun-deep": "node ../../node_modules/tsx/dist/cli.mjs src/index.ts doc-process rerun --mode deep --all --source lab/agent/filesystem/source",
+    "source:watch": "node ../../node_modules/tsx/dist/cli.mjs src/index.ts doc-process watch --source lab/agent/filesystem/source",
+    "test": "node ../../node_modules/tsx/dist/cli.mjs --test tests/**/*.test.ts"
+  }
+}
