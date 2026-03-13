@@ -9,6 +9,9 @@ coverage
 .env.local
 .env.test
 
+# Inspirações (projetos de referência): uso local e indexação no Cursor; não versionar.
+.agents/inspirations/
+
 # Agent lab filesystem: gerado em runtime. Só versionamos código + PDFs em source para testes na nuvem.
 # lab/agent/filesystem/*
 # !lab/agent/filesystem/source/
