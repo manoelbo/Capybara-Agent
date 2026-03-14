@@ -24,3 +24,26 @@
 - O `AppSidebar` foi modularizado em subcomponentes em `src/renderer/src/components/app/sidebar/` (header, section, menu item, collapsible menu item e footer).
 - O comando `/storybook-variants` repete o fluxo: especificar componente(s) e objetivo → agente cria variações no Storybook (pequenas e grandes) → usuário escolhe qual → agente implementa no componente real usando a story como fonte de verdade (respeitando edições feitas no Storybook).
 - O CLI do Agent Lab possui entrada conversacional direta: `pnpm reverso agent --text/--prompt` e `pnpm reverso --text/--prompt`, com roteamento por sessão (`deep-dive-session`) e estado de leads.
+
+## Cursor Cloud specific instructions
+
+### Services overview
+
+| Service | Command | Port | Notes |
+|---------|---------|------|-------|
+| Electron app (dev) | `pnpm dev` | 5173 (renderer) | Requires display; dbus errors are normal in headless envs |
+| Storybook | `pnpm lab:storybook:dev` | 6006 | Best surface for UI testing in Cloud |
+| Agent Lab CLI | `pnpm reverso <command>` | — | Requires `OPENROUTER_API_KEY` in `.env.local` |
+
+### Lint / Typecheck / Test
+
+- **Lint:** `pnpm lint` (ESLint v9 flat config). First uncached run is very slow (~20-30 min on constrained VMs). Subsequent runs use `.eslintcache` and are fast. For quick checks, run `npx eslint --no-cache <specific-files>`.
+- **Typecheck:** `pnpm typecheck` (runs `typecheck:node` then `typecheck:web`). Pre-existing TS errors exist in `markdown-it` related files (missing `@types/markdown-it`).
+- **Tests:** `pnpm test` runs document-processing tests via Node's built-in test runner with tsx.
+
+### Gotchas
+
+- The `lab/agent/filesystem/dossier/` directory may not exist on a fresh checkout. The Electron app logs errors when watching this path. Create it with `mkdir -p lab/agent/filesystem/dossier` if needed.
+- No databases or Docker required. All data is stored as Markdown files on the local filesystem.
+- The `postinstall` script runs `electron-builder install-app-deps` to rebuild native deps for Electron.
+- Agent Lab CLI features require `OPENROUTER_API_KEY` env var (set in `.env.local` at project root). See `lab/agent/.env.example` for reference.
